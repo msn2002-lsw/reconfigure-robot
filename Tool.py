@@ -31,14 +31,18 @@ def SDH_Stand_inverse_solution(PX, PY, PZ):
     b = -Config.R_L3 * math.sin(Q3) - Config.R_L3 * math.cos(Q3) - a
     d = Config.R_L3 * math.sin(Q3) - Config.R_L3 * math.cos(Q3) - a
     Q6 = -(math.asin(
-        (PX + PZ + Config.R_L7) / math.sqrt(math.pow(b, 2) + math.pow(d, 2))) + np.deg2rad(180)) - math.atan2(b, d)
+        (PX + PZ + Config.R_L7) / math.sqrt(math.pow(b, 2) + math.pow(d, 2))) + math.pi) - math.atan2(b, d)
 
     # Q2
-    Q2 = np.deg2rad(-90) - Q3 - Q6
+    Q2 = -math.pi/2 - Q3 - Q6
 
     # 整合数据
+    Q2 = math.degrees(Q2)
+    Q3 = math.degrees(Q3)
+    Q4 = math.degrees(Q4)
+    Q5 = math.degrees(Q5)
+    Q6 = math.degrees(Q6)
     Stand_Leg_Joint_Group = [Q2, Q3, Q4, Q5, Q6]
-    Stand_Leg_Joint_Group = np.rad2deg(Stand_Leg_Joint_Group)  # 弧度制-->角度制
     # Stand_Leg_Joint_Group = np.round(Stand_Leg_Joint_Group, 3)  # 控制计算精度
 
     return Stand_Leg_Joint_Group
@@ -150,8 +154,14 @@ def SDH_inverse_solution(SDH_name: str, Q4, Q9, PX, PY, PZ):
     # Q10 = -(Q4 + Q7 + Q8)
 
     # 整合数据
+    Q5 = math.degrees(Q5)
+    if Q5 < -20:
+        Q5 = -20  # 限制Q5最小值
+    Q6 = -Q5
+    Q7 = math.degrees(Q7)
+    Q8 = math.degrees(Q8)
+    Q9 = math.degrees(Q9)
     Leg_Joint_Group = [Q5, Q6, Q7, Q8, Q9]
-    Leg_Joint_Group = np.rad2deg(Leg_Joint_Group)  # 弧度制-->角度制
     # Leg_Joint_Group = np.round(Leg_Joint_Group, 7)  # 控制结果输出精度
 
     return Leg_Joint_Group
@@ -228,17 +238,18 @@ def SDH_positive_solution(SDH_name: str, Q4, Q5, Q6, Q7, Q8, Q9):
 
     return T09
 
-def calculate_init_position_crawl_tripod(swing_distance:float, height:float)-> dict:
+def calculate_init_position_crawl_tripod(duty_factor:float, step_size:float, height:float)-> dict:
     """
     计算三角步态初始位置
-
     Args:
-        swing_distance (float): 支撑相腿移动的距离，单位mm
+        duty_factor (float): 腿部支撑相占总周期的比例
+        step_size (float): 摆动相移动的距离，单位mm
         height (float): 抬腿高度，单位mm
-
     Returns:
-        dict: 包含每条腿初始位置的字典，形式如下: {leg_name: [x, y, z], ...}
+        position (dict): 包含每条腿初始位置的字典，形式如下: {leg_name: [x, y, z], ...}
     """
+
+    swing_distance = step_size * duty_factor
     init_position = {
         "LF": [Config.C_PX_init, Config.C_PY_init + swing_distance/2, Config.C_PZ_init - height/2],
         "RF": [Config.C_PX_init, Config.C_PY_init + swing_distance/2 - swing_distance/3*2, Config.C_PZ_init - height/2],
@@ -247,11 +258,48 @@ def calculate_init_position_crawl_tripod(swing_distance:float, height:float)-> d
     }
     return init_position
 
+def calculate_init_position_stand_diagonal(duty_factor:float, step_size:float, height:float)-> dict:
+    """
+    计算对角步态初始位置
+
+    Args:
+        duty_factor (float): 腿部支撑相占总周期的比例
+        step_size (float): 摆动相移动的距离，单位mm
+        height (float): 抬腿高度，单位mm
+    Returns:
+        dict: 包含每条腿初始位置的字典，形式如下: {leg_name: [x, y, z], ...}
+    """
+    swing_distance = step_size * duty_factor
+
+    RBPX_INIT = Config.Diagnoal_Px_init
+    RBPY_INIT = -swing_distance / 2
+    RBPZ_INIT = Config.Diagonal_Pz_init
+
+    RFPX_INIT = Config.Diagnoal_Px_init
+    RFPY_INIT = swing_distance / 2
+    RFPZ_INIT = Config.Diagonal_Pz_init
+
+    LFPX_INIT = Config.Diagnoal_Px_init
+    LFPY_INIT = swing_distance / 2
+    LFPZ_INIT = Config.Diagonal_Pz_init
+
+    LBPX_INIT = Config.Diagnoal_Px_init
+    LBPY_INIT = -swing_distance / 2
+    LBPZ_INIT = Config.Diagonal_Pz_init
+
+    init_position = {
+        "LF": [LFPX_INIT, LFPY_INIT, LFPZ_INIT],
+        "RF": [RFPX_INIT, RFPY_INIT, RFPZ_INIT],
+        "LB": [LBPX_INIT, LBPY_INIT, LBPZ_INIT],
+        "RB": [RBPX_INIT, RBPY_INIT, RBPZ_INIT]
+    }
+    return init_position
+    
 if __name__ == "__main__":
-    T = SDH_positive_solution('RB', 0, 0, 0, 0, -90, 90)
-    print(T)
+    # T = SDH_positive_solution('RB', 0, 0, 0, 0, -90, 90)
+    # print(T)
 
     print('------------------')
-    theta  = SDH_inverse_solution('RB', 0, 90, 129, -165, -60)
+    theta  = SDH_inverse_solution('RB', 0, 90, 122, -123, -9)
     print(theta)
     pass

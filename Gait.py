@@ -88,7 +88,6 @@ def getPositionInGaitCycle(legInfo: List[Config.LegParam], t_now:float, t_total:
         t_total (float): 总时间
         height (float): 抬腿高度,单位mm
         stepSize (float): 步长,单位mm
-        initPosition (dict): 每条腿的初始位置,形式如下: {leg_name: [x, y, z], ...}
     Returns:
         dict: 包含每条腿位置的字典，形式如下: {leg_name: [x, y, z], ...}
     """
